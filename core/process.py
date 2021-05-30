@@ -1,5 +1,6 @@
 import random
 import math as m
+from itertools import permutations
 
 
 class simulatedAnnealling:
@@ -24,34 +25,45 @@ class simulatedAnnealling:
                 print(e)
         return routeCost
 
+    def calExactPath(self):
+        nodes_idx = list(range(0, self.nodes.shape[1]))
+        energy_best = self.calRouteCost(nodes_idx)
+        route_best = nodes_idx
+        for _, route in enumerate(permutations(nodes_idx)):
+            energy_curr = self.calRouteCost(route)
+            if energy_curr < energy_best:
+                route_best = route
+                energy_best = energy_curr
+        return self.nodes[:, route_best], energy_best
+        
     def optimise(self):
         # init route
         nodes_idx = list(range(0, self.nodes.shape[1]))
         random.shuffle(nodes_idx)
         # run simulated annealling
         # history = [0 for _ in range(self.nodes.shape[1]*self.batch_size)]
-        E_curr = self.calRouteCost(nodes_idx)
-        s_best = nodes_idx.copy()
-        E_best = E_curr
+        energy_curr = self.calRouteCost(nodes_idx)
+        route_best = nodes_idx.copy()
+        energy_best = energy_curr
         for i in range(self.nodes.shape[1]*self.batch_size):
             T = 1 - (i / (self.nodes.shape[1]*self.batch_size))
             # swapping 2 nodes as next state and calculate cost
             id1 = random.randrange(1, self.nodes.shape[1] - 1)
             id2 = random.randrange(1, self.nodes.shape[1] - 1)
-            s_next = nodes_idx.copy()
-            s_next[id1], s_next[id2] = s_next[id2], s_next[id1]
-            E_next = self.calRouteCost(s_next)
+            route_next = nodes_idx.copy()
+            route_next[id1], route_next[id2] = route_next[id2], route_next[id1]
+            energy_next = self.calRouteCost(route_next)
             # evaluate next state
-            E_delta = E_next - E_curr
-            if E_delta <= 0:
+            energy_delta = energy_next - energy_curr
+            if energy_delta <= 0:
                 # if cost is lower accept state
-                nodes_idx = s_next.copy()
-                E_curr = E_next
-                s_best = s_next.copy()
-                E_best = E_next
+                nodes_idx = route_next.copy()
+                energy_curr = energy_next
+                route_best = route_next.copy()
+                energy_best = energy_next
             elif m.exp((-1) / (T)) >= random.uniform(0, 1):
                 # if cost is higher accept state with certain probability
-                nodes_idx = s_next.copy()
-                E_curr = E_next
+                nodes_idx = route_next.copy()
+                energy_curr = energy_next
             # history[i] = E_curr
-        return self.nodes[:, s_best], E_best
+        return self.nodes[:, route_best], energy_best
