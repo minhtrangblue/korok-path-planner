@@ -45,8 +45,10 @@ class simulatedAnnealling:
         energy_curr = self.calRouteCost(nodes_idx)
         route_best = nodes_idx.copy()
         energy_best = energy_curr
+        T = 1
         for i in range(self.nodes.shape[1]*self.batch_size):
-            T = 1 - (i / (self.nodes.shape[1]*self.batch_size))
+            # T = 1 - (i / (self.nodes.shape[1]*self.batch_size))
+            T = T / (100 * ((i+1) / (self.nodes.shape[1] * self.batch_size)))
             # swapping 2 nodes as next state and calculate cost
             id1 = random.randrange(1, self.nodes.shape[1] - 1)
             id2 = random.randrange(1, self.nodes.shape[1] - 1)
@@ -61,9 +63,10 @@ class simulatedAnnealling:
                 energy_curr = energy_next
                 route_best = route_next.copy()
                 energy_best = energy_next
-            elif m.exp((-1) / (T)) >= random.uniform(0, 1):
+            else:
+                if T > 0 and m.exp((-1) / (T)) >= random.uniform(0, 1):
                 # if cost is higher accept state with certain probability
-                nodes_idx = route_next.copy()
-                energy_curr = energy_next
+                    nodes_idx = route_next.copy()
+                    energy_curr = energy_next
             # history[i] = E_curr
         return self.nodes[:, route_best], energy_best
