@@ -23,7 +23,8 @@ def create_app(test_config=None):
             response = request.get_json()['features']
             if len(response) == 0:
                 app.logger.info('Empty response. No area selected')
-                return jsonify([[]])
+                paths = [[]]
+                costs = [-1]
             else:
                 paths = [[] for _ in response]
                 costs = [-1 for _ in response]
@@ -59,9 +60,9 @@ def create_app(test_config=None):
                         app.logger.info('Finished.')
                         paths[i] = shortest_path
                         costs[i] = cost_best
-                # send result in a dict
-                result = dict()
-                result['paths'] = paths
-                result['costs'] = costs
-                return jsonify(result)
+            # send result in a dict
+            result = dict()
+            result['paths'] = paths
+            result['costs'] = costs
+            return jsonify(result)
     return app
