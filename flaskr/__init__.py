@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import numpy as np
-from core.solver import SimulatedAnnealing
+from core.optimiser import SimulatedAnnealing
+from core.solver import Solver
 import sys
 
 
@@ -40,24 +41,16 @@ def create_app():
                         nodes = df[(df['y'] > selected_y_min) & (df['y'] < selected_y_max)
                                    & (df['x'] > selected_x_min) & (df['x'] < selected_x_max)]
                         nodes = np.array(nodes[['x', 'y']]).transpose()
-                        # app.logger.info('Selected nodes:' + json.dumps(nodes.tolist()))
-                        if nodes.shape[1] <= 1:
+                        nodes = nodes.tolist()
+                        app.logger.info('Selected nodes:' + str(nodes))
+                        if len(nodes) == 0 or len(nodes[0]) <= 1:
                             app.logger.info('Select more than 1 node')
                             paths[i] = []
                             costs[i] = -1
                         else:
-                            sa = SimulatedAnnealing(nodes=nodes)
-                            if nodes.shape[1] <= 8:
-                                # if fewer than 8 nodes run exact algorithm
-                                app.logger.info('Run exact algorithm...')
-                                shortest_path, cost_best = sa.cal_exact_path()
-                            else:
-                                # if more than 8 nodes run estimation
-                                app.logger.info('Running Simulated Annealing ...')
-                                shortest_path, cost_best = sa.optimise()
-
-                            shortest_path = shortest_path[::-1, :].transpose().tolist()
-                            app.logger.info('Finished.')
+                            solver = Solver(SimulatedAnnealing(nodes=nodes))
+                            shortest_path, cost_best = solver.solve()
+                            app.logger.info('Finished.' + str(shortest_path))
                             paths[i] = shortest_path
                             costs[i] = cost_best
                     except Exception:
