@@ -1,6 +1,7 @@
 from core.optimiser import Optimiser
 from typing import Tuple
 
+
 class Solver:
     def __init__(self, optimiser: Optimiser) -> None:
         self._optimiser = optimiser
@@ -15,5 +16,3 @@ class Solver:
 
     def solve(self) -> Tuple[list, float]:
         return self._optimiser.optimise()
-
-
