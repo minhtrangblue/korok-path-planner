@@ -25,7 +25,7 @@ class Optimiser(ABC):
 class ExactOptimiser(Optimiser):
     def __init__(self, nodes: list):
         self._nodes = nodes
-        self.cost = [[None for _ in range(len(nodes[0]))] for _ in range(len(nodes[0]))]
+        self._cost = [[None for _ in range(len(nodes[0]))] for _ in range(len(nodes[0]))]
 
     def get_nodes(self) -> list:
         return self._nodes
@@ -41,11 +41,11 @@ class ExactOptimiser(Optimiser):
             start_node = nodes_idx[i - 1]
             end_node = nodes_idx[i]
             # calculate distance value if not yet calculated
-            if not self.cost[start_node][end_node]:
-                self.cost[start_node][end_node] = ((self.nodes[0][end_node] - self.nodes[0][start_node]) / 4) ** 2 + (
+            if not self._cost[start_node][end_node]:
+                self._cost[start_node][end_node] = ((self.nodes[0][end_node] - self.nodes[0][start_node]) / 4) ** 2 + (
                         (self.nodes[1][end_node] - self.nodes[1][start_node]) / 4) ** 2
             # add to total sum
-            route_cost = route_cost + self.cost[start_node][end_node]
+            route_cost = route_cost + self._cost[start_node][end_node]
         return route_cost
 
     def optimise(self) -> Tuple[list, float]:
@@ -91,8 +91,8 @@ class SimulatedAnnealing(Optimiser):
             end_node = nodes_idx[i]
             # calculate distance value if not yet calculated
             if not self._cost[start_node][end_node]:
-                self._cost[start_node][end_node] = ((self.nodes[0][end_node] - self.nodes[0][start_node]) / 4) ** 2 + (
-                        (self.nodes[1][end_node] - self.nodes[1][start_node]) / 4) ** 2
+                self._cost[start_node][end_node] = ((self.nodes[0][end_node] - self.nodes[0][start_node]) / 10) ** 2 + (
+                        (self.nodes[1][end_node] - self.nodes[1][start_node]) / 10) ** 2
             # add to total sum
             route_cost = route_cost + self._cost[start_node][end_node]
         return route_cost
@@ -107,15 +107,14 @@ class SimulatedAnnealing(Optimiser):
         energy_curr = self.cal_route_cost(nodes_idx)
         route_best = nodes_idx.copy()
         energy_best = energy_curr
-        # temperature = 1
         for i in range(len(self.nodes[0])):
-            temperature = 1 / (1 + 100 * i / len(self.nodes[0]))
+            temperature = 1 / (1 + i)
             for j in range(self._batch_size):
                 # swapping 2 nodes as next state and calculate cost
                 id1 = random.randrange(1, len(self.nodes[0]) - 1)
                 id2 = random.randrange(1, len(self.nodes[0]) - 1)
                 route_next = nodes_idx.copy()
-                route_next[id1], route_next[id2] = route_next[id2], route_next[id1]
+                route_next[min(id1, id2):max(id1, id2)] = route_next[max(id1, id2)-1:min(id1, id2)-1:-1]
                 energy_next = self.cal_route_cost(route_next)
                 # evaluate next state
                 energy_delta = energy_next - energy_curr
@@ -126,12 +125,10 @@ class SimulatedAnnealing(Optimiser):
                     route_best = route_next.copy()
                     energy_best = energy_next
                 else:
-                    if temperature > 0 and m.exp((-1 * energy_delta / energy_curr) / temperature) >= random.uniform(0,
-                                                                                                                    1):
+                    if temperature > 0 and m.exp(-1 * energy_delta / temperature) >= random.uniform(0, 1):
                         # if cost is higher accept state with certain probability
                         nodes_idx = route_next.copy()
                         energy_curr = energy_next
-            # history[i] = E_curr
         route_coord = [[row[col] for col in route_best] for row in self.nodes]
         return route_coord, energy_best
 

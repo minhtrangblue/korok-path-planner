@@ -8,8 +8,8 @@ class MPSolver:
     def __init__(self, optimiser: Optimiser, num_proc: Optional[int] = 4):
         self._optimiser = optimiser
         self._num_proc = min(multiprocessing.cpu_count(), num_proc)
-        self.exit_event = multiprocessing.Manager().Event()
-        self.output_queue = multiprocessing.Manager().Queue(maxsize=self._num_proc)
+        # self._exit_event = multiprocessing.Manager().Event()
+        # self._output_queue = multiprocessing.Manager().Queue(maxsize=self._num_proc)
 
     @property
     def optimiser(self) -> Optimiser:
@@ -26,8 +26,8 @@ class MPSolver:
     def worker_solve(self, worker_id: int) -> Tuple[list, float]:
         # print('Worker ' + str(worker_id) + ' starts ')
         route_coord, energy_best = self._optimiser.optimise()
-        self.output_queue.put_nowait((route_coord, energy_best))
-        self.exit_event.set()
+        # self._output_queue.put_nowait((route_coord, energy_best))
+        # self._exit_event.set()
         return route_coord, energy_best
 
     def solve(self) -> Tuple[list, float]:
@@ -47,7 +47,7 @@ class MPSolver:
             routes.append(route_coord)
             energies.append(energy_best)
         index_min = min(range(len(energies)), key=energies.__getitem__)
-        # use best route found to initialise the algo one more time
+        # use best route found to initialise the optimiser one more time
         self._optimiser.set_nodes(routes[index_min])
         route_coord, energy_best = self._optimiser.optimise()
         # return the best route found
