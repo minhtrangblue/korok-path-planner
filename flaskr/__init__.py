@@ -6,6 +6,8 @@ from core.solver import Solver
 from core.mpsolver import MPSolver
 import traceback
 
+df = pd.read_csv('data/all_seeds.csv')
+
 
 def create_app():
     # create and configure the app
@@ -21,7 +23,6 @@ def create_app():
         response = response['features']
         nodes = [[] for _ in response]
         if len(response) == 0:
-            # app.logger.info('Empty response. No area selected')
             nodes = [[[]]]
         else:
             for i in range(len(response)):
@@ -31,12 +32,11 @@ def create_app():
                 selected_x_max = max([point[0] for point in selected_rectangle])
                 selected_y_min = min([point[1] for point in selected_rectangle])
                 selected_y_max = max([point[1] for point in selected_rectangle])
-                df = pd.read_csv('data/all_seeds.csv')
                 locations = df[(df['y'] > selected_y_min) & (df['y'] < selected_y_max)
                            & (df['x'] > selected_x_min) & (df['x'] < selected_x_max)]
                 locations = np.array(locations[['x', 'y']]).transpose()
                 nodes[i] = locations.tolist()
-        app.logger.info('Selected nodes:' + str(nodes))
+        # app.logger.info('Selected nodes:' + str(nodes))
         return nodes
 
     # function call on user request find path
@@ -59,14 +59,17 @@ def create_app():
                             app.logger.info('Select more than 1 node')
                             paths[i] = []
                             costs[i] = -1
+                        if len(nodes[i][0]) == 901:
+                            paths[i] = pd.read_csv('data/all_seeds_solution.csv')[['0', '1']].values.tolist()
+                            costs[i] = -1
                         else:
-                            app.logger.info('Find path for nodes:' + str(str(nodes[i])))
+                            app.logger.info('Find path for nodes:' + str(len(nodes[i][0])))
                             if len(nodes[i][0]) <= 8:
                                 s = Solver(ExactOptimiser(nodes=nodes[i]))
                             else:
                                 s = MPSolver(SimulatedAnnealing(nodes=nodes[i]))
                             shortest_path, cost_best = s.solve()
-                            app.logger.info('Finished.' + str(shortest_path))
+                            app.logger.info('Finished.')
                             paths[i] = list(map(list, zip(*shortest_path[::-1])))
                             costs[i] = cost_best
                     except Exception as e:
